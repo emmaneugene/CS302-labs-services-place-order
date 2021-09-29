@@ -1,5 +1,6 @@
 import pika
 import time
+import ssl
 from os import environ
 
 

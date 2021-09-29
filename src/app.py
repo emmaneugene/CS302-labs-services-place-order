@@ -22,7 +22,7 @@ CORS(app)
 @app.route("/health")
 def health_check():
     return jsonify(
-        { "message": "Service is healthy." }
+        {"message": "Service is healthy."}
     ), 200
 
 
