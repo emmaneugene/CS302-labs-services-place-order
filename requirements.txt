@@ -1,0 +1,7 @@
+Flask==1.1.1
+Flask-Cors==3.0.10
+Flask-SQLAlchemy==2.4.4
+mysql-connector-python==8.0.26
+SQLAlchemy<1.4
+requests==2.22.0
+pika==1.2.0
