@@ -49,7 +49,7 @@ def place_order():
         )
 
         # If an item was not successfully reserved (status code != 200),
-        # revert all previous item reservations 
+        # revert all previous item reservations
         if item_response.status_code != 200:
             revert_cart_reservations(cart_items, cart_items.index(item))
             return jsonify(
@@ -58,7 +58,6 @@ def place_order():
                     'error': 'Unable to reserve required game stock.'
                 }
             ), 500
-    
 
     # (2) Create the order
     order_response = requests.post(
@@ -73,7 +72,7 @@ def place_order():
         }
     )
 
-    # If order record was not created successfully, revert all 
+    # If order record was not created successfully, revert all
     # items previously reserved
     if order_response.status_code != 201:
         revert_cart_reservations(cart_items, len(cart_items))
@@ -108,6 +107,7 @@ def place_order():
         }
     ), 200
 
+
 def revert_cart_reservations(cart_items, idx):
     '''Reverts all cart reservations up to index `idx` exclusive'''
     for i in range(idx):
@@ -122,6 +122,7 @@ def revert_cart_reservations(cart_items, idx):
                 'Accept': 'application/json'
             }
         )
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
