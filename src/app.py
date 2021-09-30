@@ -3,6 +3,7 @@ import json
 import requests
 import amqp_setup
 import pika
+import datetime
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -19,14 +20,17 @@ app = Flask(__name__)
 CORS(app)
 
 
-@app.route("/health")
+@app.route('/health')
 def health_check():
     return jsonify(
-        {"message": "Service is healthy."}
+        {
+            'message': 'Place order service is healthy!',
+            'time': str(datetime.datetime.now())
+        }
     ), 200
 
 
-@app.route("/place-order", methods=['POST'])
+@app.route('/place-order', methods=['POST'])
 def place_order():
     data = request.get_json()
 
@@ -36,7 +40,7 @@ def place_order():
         requests.patch(
             games_service_url + '/games/' + str(order_item['game_id']),
             data=json.dumps({
-                "reserve": order_item['quantity']
+                'reserve': order_item['quantity']
             }),
             headers={
                 'Content-Type': 'application/json',
@@ -49,8 +53,8 @@ def place_order():
     order_response = requests.post(
         orders_service_url + '/orders',
         data=json.dumps({
-            "customer_email": data["customer_email"],
-            "cart_items": data["cart_items"]
+            'customer_email': data['customer_email'],
+            'cart_items': data['cart_items']
         }),
         headers={
             'Content-Type': 'application/json',
@@ -61,8 +65,8 @@ def place_order():
     # (3) Send notification to the AMQP broker
 
     notification_data = {
-        "email": data["customer_email"],
-        "data": data["cart_items"]
+        'email': data['customer_email'],
+        'data': data['cart_items']
     }
 
     connection = pika.BlockingConnection(amqp_setup.parameters)
@@ -70,7 +74,7 @@ def place_order():
     channel = connection.channel()
 
     channel.basic_publish(
-        exchange=amqp_setup.exchange_name, routing_key="order.new",
+        exchange=amqp_setup.exchange_name, routing_key='order.new',
         body=json.dumps(notification_data),
         properties=pika.BasicProperties(delivery_mode=2))
 
@@ -78,8 +82,8 @@ def place_order():
 
     return jsonify(
         {
-            "message": "Order placed.",
-            "data": order_response.json()['data']
+            'message': 'Order placed.',
+            'data': order_response.json()['data']
         }
     ), 200
 
