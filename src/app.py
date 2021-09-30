@@ -35,12 +35,12 @@ def place_order():
     data = request.get_json()
 
     # (1) Reserve the games
-
-    for order_item in data['cart_items']:
-        requests.patch(
-            games_service_url + '/games/' + str(order_item['game_id']),
+    cart_items = data['cart_items']
+    for item in cart_items:
+        item_response = requests.patch(
+            games_service_url + '/games/' + str(item['game_id']),
             data=json.dumps({
-                'reserve': order_item['quantity']
+                'reserve': item['quantity']
             }),
             headers={
                 'Content-Type': 'application/json',
@@ -48,8 +48,19 @@ def place_order():
             }
         )
 
-    # (2) Create the order
+        # If an item was not successfully reserved (status code != 200),
+        # revert all previous item reservations 
+        if item_response.status_code != 200:
+            revert_cart_reservations(cart_items, cart_items.index(item))
+            return jsonify(
+                {
+                    'message': 'Unable to place order.',
+                    'error': 'Unable to reserve required game stock.'
+                }
+            ), 500
+    
 
+    # (2) Create the order
     order_response = requests.post(
         orders_service_url + '/orders',
         data=json.dumps({
@@ -62,8 +73,18 @@ def place_order():
         }
     )
 
-    # (3) Send notification to the AMQP broker
+    # If order record was not created successfully, revert all 
+    # items previously reserved
+    if order_response.status_code != 201:
+        revert_cart_reservations(cart_items, len(cart_items))
+        return jsonify(
+            {
+                'message': 'Unable to place order.',
+                'error': 'Unable to create order record.'
+            }
+        ), 500
 
+    # (3) Send notification to the AMQP broker
     notification_data = {
         'email': data['customer_email'],
         'data': data['cart_items']
@@ -87,6 +108,20 @@ def place_order():
         }
     ), 200
 
+def revert_cart_reservations(cart_items, idx):
+    '''Reverts all cart reservations up to index `idx` exclusive'''
+    for i in range(idx):
+        item = cart_items[i]
+        requests.patch(
+            games_service_url + '/games/' + str(item['game_id']),
+            data=json.dumps({
+                'reserve': -item['quantity']
+            }),
+            headers={
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
