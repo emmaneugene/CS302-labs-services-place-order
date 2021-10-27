@@ -9,7 +9,7 @@ port = environ.get('rabbitmq_port')
 
 # SSL connections are required for Amazon MQ's brokers
 
-if environ.get('stage') == 'production':
+if 'production' in environ.get('stage'):
     ssl_enabled = True
 else:
     ssl_enabled = False
