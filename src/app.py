@@ -7,6 +7,7 @@ import datetime
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from prometheus_flask_exporter import PrometheusMetrics
 
 if os.environ.get('stage') == 'production':
     games_service_url = os.environ.get('games_service_url')
@@ -17,9 +18,12 @@ else:
 
 app = Flask(__name__)
 
+metrics = PrometheusMetrics(app)
+
 CORS(app)
 
 
+@metrics.do_not_track()
 @app.route('/health')
 def health_check():
     return jsonify(

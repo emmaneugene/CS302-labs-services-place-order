@@ -5,3 +5,4 @@ mysql-connector-python==8.0.26
 SQLAlchemy<1.4
 requests==2.22.0
 pika==1.2.0
+prometheus-flask-exporter==0.18.4
